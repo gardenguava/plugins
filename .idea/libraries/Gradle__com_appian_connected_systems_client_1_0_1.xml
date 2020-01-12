@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.appian:connected-systems-client:1.0.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.appian/connected-systems-client/1.0.1/d8268a4917a2a71c989b89971b2f2106b284ffbb/connected-systems-client-1.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.appian/connected-systems-client/1.0.1/4aa101f6c1c5e9660e3e9486973e8bbd460442dd/connected-systems-client-1.0.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

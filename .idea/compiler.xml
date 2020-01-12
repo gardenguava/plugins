@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="hello-leela-csp.main" target="1.8" />
+      <module name="hello-leela-csp.test" target="1.8" />
+      <module name="hello-world-csp.main" target="1.8" />
+      <module name="hello-world-csp.test" target="1.8" />
+      <module name="hello-world-csp_main" target="1.8" />
+      <module name="hello-world-csp_test" target="1.8" />
+      <module name="lv_sftp_cs.main" target="1.8" />
+      <module name="lv_sftp_cs.test" target="1.8" />
+      <module name="sftp-cs.main" target="1.8" />
+      <module name="sftp-cs.test" target="1.8" />
+      <module name="sftp_cs.main" target="1.8" />
+      <module name="sftp_cs.test" target="1.8" />
+      <module name="sftpcs.main" target="1.8" />
+      <module name="sftpcs.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

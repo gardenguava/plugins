@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lv_sftp_cs.iml" filepath="$PROJECT_DIR$/.idea/modules/lv_sftp_cs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lv_sftp_cs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/lv_sftp_cs.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lv_sftp_cs.test.iml" filepath="$PROJECT_DIR$/.idea/modules/lv_sftp_cs.test.iml" />
+    </modules>
+  </component>
+</project>
