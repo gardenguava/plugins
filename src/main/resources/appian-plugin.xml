@@ -11,7 +11,7 @@
                              class="com.lv.tools.SFTPConnectedSystem">
 
     <integration-template key="SFTPIntegrationTemplate" name="SFTPIntegrationTemplate"
-                          class="com.lv.tools.SFTPIntegrationTemplate"/>
+                          class="com.lv.tools.SFTPUploadFileIntegrationTemplate"/>
 
   </connected-system-template>
 </appian-plugin>
