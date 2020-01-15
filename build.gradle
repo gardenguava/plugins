@@ -8,9 +8,9 @@ repositories {
 
 dependencies {
   runtimeOnly 'com.jcraft:jsch:0.1.55'
-  compileOnly 'com.appian:connected-systems-core:1.1.1', 'com.jcraft:jsch:0.1.55'
-  implementation 'com.appian:connected-systems-client:1.0.1'
-  testImplementation 'com.appian:connected-systems-core:1.1.1'
+  compileOnly 'com.appian:connected-systems-core:1.2.0', 'com.jcraft:jsch:0.1.55'
+  implementation 'com.appian:connected-systems-client:1.1.0'
+  testImplementation 'com.appian:connected-systems-core:1.2.0'
 }
 
 

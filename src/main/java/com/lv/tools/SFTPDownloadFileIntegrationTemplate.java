@@ -7,6 +7,7 @@ import com.appian.connectedsystems.templateframework.sdk.IntegrationError;
 import com.appian.connectedsystems.templateframework.sdk.IntegrationResponse;
 import com.appian.connectedsystems.templateframework.sdk.TemplateId;
 import com.appian.connectedsystems.templateframework.sdk.configuration.Document;
+import com.appian.connectedsystems.templateframework.sdk.configuration.FolderPropertyDescriptor;
 import com.appian.connectedsystems.templateframework.sdk.configuration.PropertyPath;
 import com.appian.connectedsystems.templateframework.sdk.diagnostics.IntegrationDesignerDiagnostic;
 import com.appian.connectedsystems.templateframework.sdk.metadata.IntegrationTemplateRequestPolicy;
@@ -18,54 +19,48 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-// ToDo: Replace username, password parameters with third party credentials
+@TemplateId(name = "com.lv.tools.SFTPDownloadFileIntegrationTemplate")
+@IntegrationTemplateType(IntegrationTemplateRequestPolicy.READ)
+public class SFTPDownloadFileIntegrationTemplate extends SimpleIntegrationTemplate {
 
-@TemplateId(name = "com.lv.tools.SFTPUploadFileIntegrationTemplate")
-@IntegrationTemplateType(IntegrationTemplateRequestPolicy.WRITE)
-public class SFTPUploadFileIntegrationTemplate extends SimpleIntegrationTemplate {
-
-    public static final String INTEGRATION_PROP_SOURCE_APPIAN_DOCUMENT = "sourceAppianDocument";
-    public static final String INTEGRATION_PROP_DESTINATION_SFTP_FOLDER_PATH = "destinationSFTPFolderPath";
-    public static final String INTEGER_PROP_READ_ONLY_ABSOLUTE_PATH = "absolutePath";
+    public static final String INTEGRATION_PROP_SOURCE_SFTP_FOLDER_PATH = "sourceSFTPFolderPath";
+    public static final String INTEGRATION_PROP_DEST_APPIAN_FOLDER = "destinationAppianFolder";
+    public static final String INTEGRATION_PROP_APPIAN_FILE_NAME = "appianDocumentFileName";
 
     // Do not expose this now, for future implementation only.
     public static final String INTEGRATION_PROP_CHANNEL_TYPE = "sftp";
 
     @Override
-    protected SimpleConfiguration getConfiguration(
-            SimpleConfiguration integrationConfiguration,
-            SimpleConfiguration connectedSystemConfiguration,
-            PropertyPath propertyPath,
-            ExecutionContext executionContext) {
+    protected SimpleConfiguration getConfiguration(SimpleConfiguration integrationConfiguration, SimpleConfiguration connectedSystemConfiguration, PropertyPath updatedProperty, ExecutionContext executionContext) {
         return integrationConfiguration.setProperties(
-                documentProperty(INTEGRATION_PROP_SOURCE_APPIAN_DOCUMENT)
-                        .label("Appian Document")
+                textProperty(INTEGRATION_PROP_SOURCE_SFTP_FOLDER_PATH)
+                        .label("Source File Path")
                         .isRequired(true)
                         .isExpressionable(true)
-                        .description("Select appian document to send to SFTP folder")
+                        .description("File Path in SFTP")
                         .build(),
-                textProperty(INTEGRATION_PROP_DESTINATION_SFTP_FOLDER_PATH)
-                        .label("Destination Folder Path")
+                // 19.3+ dependency here
+                FolderPropertyDescriptor.builder()
+                        .key(INTEGRATION_PROP_DEST_APPIAN_FOLDER)
+                        .label("Save to Folder")
+                        .isRequired(true)
+                        .instructionText("Destination Appian folder id to store fetched document")
+                        .isExpressionable(true)
+                        .build(),
+                textProperty(INTEGRATION_PROP_APPIAN_FILE_NAME)
+                        .label("Appian Document Name")
                         .isRequired(true)
                         .isExpressionable(true)
-                        .description("Enter destination SFTP folder path")
-                        .build(),
-                textProperty(INTEGER_PROP_READ_ONLY_ABSOLUTE_PATH)
-                        .label("Absolute File Path")
-                        .isRequired(false)
-                        .isReadOnly(true)
-                        .instructionText("ToDo: Display readonly absolute path here.")
+                        .instructionText("If left blank source filename will be used")
                         .build()
         );
     }
 
     @Override
-    protected IntegrationResponse execute(
-            SimpleConfiguration integrationConfiguration,
-            SimpleConfiguration connectedSystemConfiguration,
-            ExecutionContext executionContext) {
+    protected IntegrationResponse execute(SimpleConfiguration integrationConfiguration, SimpleConfiguration connectedSystemConfiguration, ExecutionContext executionContext) {
         Map<String, Object> requestDiagnostic = new HashMap<>();
         Map<String, Object> responseDiagnostic = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
 
         String hostName = connectedSystemConfiguration.getValue(SFTPConnectedSystem.CS_PROP_HOST_NAME);
         String port = connectedSystemConfiguration.getValue(SFTPConnectedSystem.CS_PROP_PORT);
@@ -73,27 +68,34 @@ public class SFTPUploadFileIntegrationTemplate extends SimpleIntegrationTemplate
         String password = connectedSystemConfiguration.getValue(SFTPConnectedSystem.CS_PROP_PASSWORD);
         String baseFolder = connectedSystemConfiguration.getValue(SFTPConnectedSystem.CS_PROP_BASE_FOLDER);
 
-        Document sourceAppianDocument = integrationConfiguration.getValue(INTEGRATION_PROP_SOURCE_APPIAN_DOCUMENT);
-        String destinationSFTPFolderPath = integrationConfiguration.getValue(INTEGRATION_PROP_DESTINATION_SFTP_FOLDER_PATH);
+        String sourceSFTPFolderPath = integrationConfiguration.getValue(INTEGRATION_PROP_SOURCE_SFTP_FOLDER_PATH);
+        Long folderId = integrationConfiguration.getValue(INTEGRATION_PROP_DEST_APPIAN_FOLDER);
+        String fileName = integrationConfiguration.getValue(INTEGRATION_PROP_APPIAN_FILE_NAME);
 
         requestDiagnostic.put("hostName", hostName);
         requestDiagnostic.put("port", port);
         requestDiagnostic.put("username", username);
-        requestDiagnostic.put("sourceAppianDocument", sourceAppianDocument);
-        requestDiagnostic.put("destinationSFTPFolderPath", destinationSFTPFolderPath);
+        requestDiagnostic.put("sourceFolderPath", sourceSFTPFolderPath);
+        requestDiagnostic.put("folderId", folderId);
 
         final long start = System.currentTimeMillis();
 
         try {
             Session session = getSession(hostName, username, password, Integer.parseInt(port));
+
+            // Fetch document from SFTP to Appian
             session.connect();
-            uploadFile(session, sourceAppianDocument.getInputStream(), getDestinationFolderPath(baseFolder, destinationSFTPFolderPath));
+            Document document = downloadFile(session, executionContext, getSourceFolderPath(baseFolder, sourceSFTPFolderPath), folderId, fileName);
             session.disconnect();
 
-            responseDiagnostic.put("Appian Document Name", sourceAppianDocument.getFileName());
-            responseDiagnostic.put("Document Size", sourceAppianDocument.getFileSize());
+            // Capture responses
+            responseDiagnostic.put("File Name", document.getFileName() + "." + document.getExtension());
+            responseDiagnostic.put("File Size", document.getFileSize());
+
+            // Save result
+            result.put("Document", document);
         } catch (Exception e) {
-            return IntegrationResponse.forError(getIntegrationError("Unable to upload document", e)).build();
+            return IntegrationResponse.forError(getIntegrationError("Unable to download document", e)).build();
         }
 
         final long end = System.currentTimeMillis();
@@ -102,19 +104,30 @@ public class SFTPUploadFileIntegrationTemplate extends SimpleIntegrationTemplate
         final IntegrationDesignerDiagnostic diagnostic = IntegrationDesignerDiagnostic.builder()
                 .addExecutionTimeDiagnostic(executionTime)
                 .addRequestDiagnostic(requestDiagnostic)
+                .addResponseDiagnostic(responseDiagnostic)
                 .build();
 
         return IntegrationResponse
-                .forSuccess(responseDiagnostic)
+                .forSuccess(result)
                 .withDiagnostic(diagnostic)
                 .build();
     }
 
-    private String getDestinationFolderPath(String baseFolderPath, String relativeFolderPath) throws SFTPConnectedSystemExpcetion {
+    private Document downloadFile(Session session, ExecutionContext executionContext, String sourcePath, Long folderId, String fileName) throws JSchException, SftpException {
+        ChannelSftp channel = (ChannelSftp) session.openChannel(INTEGRATION_PROP_CHANNEL_TYPE);
+
+        channel.connect();
+        InputStream inputStream = channel.get(sourcePath);
+        Document document = executionContext.getDocumentDownloadService().downloadDocument(inputStream, folderId, fileName);
+
+        return document;
+    }
+
+    private String getSourceFolderPath(String baseFolderPath, String relativeFolderPath) throws SFTPConnectedSystemExpcetion {
         if ((relativeFolderPath == null || relativeFolderPath == "") &&
                 (baseFolderPath == null || baseFolderPath == "")
         ) {
-            throw new SFTPConnectedSystemExpcetion("Invalid destination folder");
+            throw new SFTPConnectedSystemExpcetion("Invalid Source folder");
         }
         if (baseFolderPath == null || baseFolderPath == "") {
             return relativeFolderPath;
@@ -135,13 +148,5 @@ public class SFTPUploadFileIntegrationTemplate extends SimpleIntegrationTemplate
         session.setConfig("StrictHostKeyChecking", "no");
 
         return session;
-    }
-
-    private void uploadFile(Session session, InputStream inStream, String destination) throws JSchException, SftpException {
-        Channel channel = session.openChannel(INTEGRATION_PROP_CHANNEL_TYPE);
-        channel.connect();
-        ChannelSftp sftpChannel = (ChannelSftp) channel;
-        sftpChannel.put(inStream, destination);
-        sftpChannel.exit();
     }
 }

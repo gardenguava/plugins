@@ -25,7 +25,7 @@ public class SFTPConnectedSystem extends SimpleTestableConnectedSystemTemplate {
 
     return simpleConfiguration.setProperties(
             textProperty(CS_PROP_HOST_NAME).label("Host Name").description("SFTP Server host name").build(),
-            textProperty(CS_PROP_PORT).label("Port").description("SFTP Server port to connect").build(),
+            integerProperty(CS_PROP_PORT).label("Port").description("SFTP Server port to connect").build(),
             textProperty(CS_PROP_USERNAME).label("Userame").description("Username to login to SFTP Server").build(),
             encryptedTextProperty(CS_PROP_PASSWORD).label("Password").description("Password to login to SFTP Server").build(),
             textProperty(CS_PROP_BASE_FOLDER).label("Base Folder").description("Base folder, leave blank if you want to use absolute path with integration.").build()
